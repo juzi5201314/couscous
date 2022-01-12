@@ -1,10 +1,10 @@
+use quinn::{RecvStream, SendStream};
 use std::io::Error;
 use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::Poll;
 use std::time::Duration;
-use quinn::{RecvStream, SendStream};
 
 use serde::{Deserialize, Deserializer};
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
@@ -47,7 +47,10 @@ impl AsyncWrite for QuicStream {
     }
 }
 
-pub(crate) fn deserialize_cert<'de, D>(d: D) -> Result<Vec<rustls::Certificate>, D::Error> where D: Deserializer<'de> {
+pub(crate) fn deserialize_cert<'de, D>(d: D) -> Result<Vec<rustls::Certificate>, D::Error>
+where
+    D: Deserializer<'de>,
+{
     let path = PathBuf::deserialize(d)?;
     let cert = std::fs::read(&path).expect("failed to read certificate");
     Ok(if path.extension().map_or(false, |x| x == "der") {
@@ -61,14 +64,17 @@ pub(crate) fn deserialize_cert<'de, D>(d: D) -> Result<Vec<rustls::Certificate>,
     })
 }
 
-pub(crate) fn deserialize_key<'de, D>(d: D) -> Result<rustls::PrivateKey, D::Error> where D: Deserializer<'de> {
+pub(crate) fn deserialize_key<'de, D>(d: D) -> Result<rustls::PrivateKey, D::Error>
+where
+    D: Deserializer<'de>,
+{
     let path = PathBuf::deserialize(d)?;
     let key = std::fs::read(&path).expect("failed to read private key");
     Ok(if path.extension().map_or(false, |x| x == "der") {
         rustls::PrivateKey(key)
     } else {
-        let pkcs8 = rustls_pemfile::pkcs8_private_keys(&mut &*key)
-            .expect("malformed PKCS #8 private key");
+        let pkcs8 =
+            rustls_pemfile::pkcs8_private_keys(&mut &*key).expect("malformed PKCS #8 private key");
         match pkcs8.into_iter().next() {
             Some(x) => rustls::PrivateKey(x),
             None => {

@@ -1,5 +1,3 @@
-
-
 use std::sync::Arc;
 
 use anyhow::Context;
@@ -27,8 +25,11 @@ pub async fn run(config: Arc<ClientConfig>, retry_num: &mut usize) -> anyhow::Re
             {
                 let mut c = quinn::ClientConfig::with_root_certificates(roots);
                 c.transport = Arc::new(transport_config());
-                Arc::get_mut(&mut c.transport).unwrap()
-                    .max_concurrent_bidi_streams(config.max_concurrent_bidi_streams.unwrap_or(100).into());
+                Arc::get_mut(&mut c.transport)
+                    .unwrap()
+                    .max_concurrent_bidi_streams(
+                        config.max_concurrent_bidi_streams.unwrap_or(100).into(),
+                    );
                 c
             },
             tokio::net::lookup_host(&*config.remote)
@@ -130,12 +131,13 @@ pub async fn run(config: Arc<ClientConfig>, retry_num: &mut usize) -> anyhow::Re
                 let remote_address = new_conn.connection.remote_address();
                 tokio::spawn(async move {
                     let socket = Arc::new(UdpSocket::bind("[::]:0").await.unwrap());
-                    socket.connect(to).await.with_context(|| {
-                        format!(
-                            "failed to connect to {}. (route `{}` udp)",
-                            to, &route_name
-                        )
-                    }).unwrap();
+                    socket
+                        .connect(to)
+                        .await
+                        .with_context(|| {
+                            format!("failed to connect to {}. (route `{}` udp)", to, &route_name)
+                        })
+                        .unwrap();
 
                     let socket_cloned = Arc::clone(&socket);
                     let route_name_cloned = route_name.clone();
@@ -149,8 +151,12 @@ pub async fn run(config: Arc<ClientConfig>, retry_num: &mut usize) -> anyhow::Re
                                 buf_reader.read_exact(&mut buf).await?;
                                 socket_cloned.send(&buf.copy_to_bytes(len)).await?;
                             } {
-                                log::info!("udp data stream `{}` disconnect. (route: `{}` udp)", remote_address, route_name_cloned);
-                                break
+                                log::info!(
+                                    "udp data stream `{}` disconnect. (route: `{}` udp)",
+                                    remote_address,
+                                    route_name_cloned
+                                );
+                                break;
                             }
                         }
                     });
@@ -166,8 +172,12 @@ pub async fn run(config: Arc<ClientConfig>, retry_num: &mut usize) -> anyhow::Re
                             send_stream.write_varint(len as u32).await?;
                             send_stream.write_all(&data).await?;
                         } {
-                            log::info!("udp data stream `{}` disconnect. (route: `{}` udp)", remote_address, route_name);
-                            break
+                            log::info!(
+                                "udp data stream `{}` disconnect. (route: `{}` udp)",
+                                remote_address,
+                                route_name
+                            );
+                            break;
                         }
                     }
                     log::info!("udp route `{}` close", &route_name);

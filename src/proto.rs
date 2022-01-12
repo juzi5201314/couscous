@@ -7,7 +7,8 @@ use tokio::io::{AsyncWrite, AsyncWriteExt};
 
 use crate::config::RouteType;
 
-pub static BINCODE_CONFIG: Lazy<bincode::config::Configuration> = Lazy::new(bincode::config::Configuration::standard);
+pub static BINCODE_CONFIG: Lazy<bincode::config::Configuration> =
+    Lazy::new(bincode::config::Configuration::standard);
 
 pub const CODE_SHUTDOWN: u8 = 0;
 pub const CODE_AUTH_FAILED: u8 = 10;
@@ -33,7 +34,7 @@ pub struct RegisterRoute {
 #[derive(Encode, Decode, PartialEq, Debug)]
 pub enum RegisterRouteRes {
     Ok,
-    Err(RegisterRouteError)
+    Err(RegisterRouteError),
 }
 
 #[derive(Encode, Decode, PartialEq, Debug)]
@@ -44,7 +45,10 @@ pub enum RegisterRouteError {
 }
 
 #[inline]
-pub async fn read_proto<T, const C: usize>(stream: &mut RecvStream) -> anyhow::Result<T> where T: Decode {
+pub async fn read_proto<T, const C: usize>(stream: &mut RecvStream) -> anyhow::Result<T>
+where
+    T: Decode,
+{
     let mut buf = SmallVec::<[u8; C]>::new_const();
     let buf_len = stream.read_varint_async().await?;
     buf.reserve_exact(buf_len);
@@ -54,11 +58,17 @@ pub async fn read_proto<T, const C: usize>(stream: &mut RecvStream) -> anyhow::R
 
     stream.read_exact(&mut buf).await?;
 
-    Ok(bincode::decode_from_std_read::<T, _, _>(&mut &*buf, *BINCODE_CONFIG)?)
+    Ok(bincode::decode_from_std_read::<T, _, _>(
+        &mut &*buf,
+        *BINCODE_CONFIG,
+    )?)
 }
 
 #[inline]
-pub async fn write_proto<T, const C: usize>(stream: &mut SendStream, val: T) -> anyhow::Result<()> where T: Encode {
+pub async fn write_proto<T, const C: usize>(stream: &mut SendStream, val: T) -> anyhow::Result<()>
+where
+    T: Encode,
+{
     let mut buf = SmallVec::<[u8; C]>::new_const();
     bincode::encode_into_std_write(val, &mut buf, *BINCODE_CONFIG)?;
     stream.write_varint(buf.len() as u32).await?;
@@ -69,7 +79,10 @@ pub async fn write_proto<T, const C: usize>(stream: &mut SendStream, val: T) -> 
 #[async_trait::async_trait]
 pub trait VarIntWriter: AsyncWrite + Unpin {
     #[cfg(target_feature = "sse2")]
-    async fn write_varint<VI: varint_simd::VarIntTarget + Send>(&mut self, n: VI) -> std::io::Result<usize> {
+    async fn write_varint<VI: varint_simd::VarIntTarget + Send>(
+        &mut self,
+        n: VI,
+    ) -> std::io::Result<usize> {
         let (buf, n) = unsafe { varint_simd::encode_unsafe(n) };
         self.write_all(&buf[0..n as usize]).await?;
         Ok(n as usize)
@@ -77,7 +90,10 @@ pub trait VarIntWriter: AsyncWrite + Unpin {
 
     #[cfg(not(target_feature = "sse2"))]
     #[inline]
-    async fn write_varint<VI: integer_encoding::VarInt + Send>(&mut self, n: VI) -> std::io::Result<usize> {
+    async fn write_varint<VI: integer_encoding::VarInt + Send>(
+        &mut self,
+        n: VI,
+    ) -> std::io::Result<usize> {
         integer_encoding::VarIntAsyncWriter::write_varint_async(self, n)
     }
 }

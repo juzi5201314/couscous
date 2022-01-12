@@ -3,11 +3,11 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-mod quic;
-pub mod config;
-pub mod server;
-pub mod proto;
 pub mod client;
+pub mod config;
+pub mod proto;
+mod quic;
+pub mod server;
 
 #[global_allocator]
 static ALLOC: snmalloc_rs::SnMalloc = snmalloc_rs::SnMalloc;
@@ -24,9 +24,7 @@ pub async fn run(conf: PathBuf) -> anyhow::Result<()> {
         (Some(_), Some(_)) => {
             anyhow::bail!("cannot be both a server and a client")
         }
-        (Some(server), None) => {
-            server::run(Arc::new(server.clone())).await
-        }
+        (Some(server), None) => server::run(Arc::new(server.clone())).await,
         (None, Some(client)) => {
             let mut retry_num = 0;
             loop {
@@ -35,7 +33,7 @@ pub async fn run(conf: PathBuf) -> anyhow::Result<()> {
                     let time = if let Some(time) = &client.retry_interval {
                         *time.duration()
                     } else {
-                        break Ok(())
+                        break Ok(());
                     };
 
                     retry_num += 1;
@@ -44,7 +42,7 @@ pub async fn run(conf: PathBuf) -> anyhow::Result<()> {
                         log::info!("start {}/{} retries after {:?}...", retry_num, max, time);
                         if retry_num > max {
                             log::warn!("retry up to the maximum number of times, stop.");
-                            break Ok(())
+                            break Ok(());
                         }
                     } else {
                         log::info!("start the {}nd retry after {:?}...", retry_num, time);
@@ -67,9 +65,7 @@ fn setup_logger(level: log::LevelFilter) -> Result<(), fern::InitError> {
                 message
             ))
         })
-        .filter(|metadata| {
-            metadata.target() != "tokio_graceful_shutdown::shutdown_token"
-        })
+        .filter(|metadata| metadata.target() != "tokio_graceful_shutdown::shutdown_token")
         .level(level)
         .chain(std::io::stdout())
         .apply()?;
