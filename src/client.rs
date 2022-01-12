@@ -17,7 +17,7 @@ use crate::proto::{
 };
 use crate::quic::{transport_config, QuicStream};
 
-pub async fn run(config: Arc<ClientConfig>) -> anyhow::Result<()> {
+pub async fn run(config: Arc<ClientConfig>, retry_num: &mut usize) -> anyhow::Result<()> {
     let mut roots = RootCertStore::empty();
     config.cert.iter().try_for_each(|c| roots.add(c))?;
 
@@ -27,6 +27,8 @@ pub async fn run(config: Arc<ClientConfig>) -> anyhow::Result<()> {
             {
                 let mut c = quinn::ClientConfig::with_root_certificates(roots);
                 c.transport = Arc::new(transport_config());
+                Arc::get_mut(&mut c.transport).unwrap()
+                    .max_concurrent_bidi_streams(config.max_concurrent_bidi_streams.unwrap_or(100).into());
                 c
             },
             tokio::net::lookup_host(&*config.remote)
@@ -37,6 +39,7 @@ pub async fn run(config: Arc<ClientConfig>) -> anyhow::Result<()> {
         )?
         .await?;
     log::info!("connecting {}", &config.remote);
+    *retry_num = 0;
 
     let mut handshake_stream = new_conn.connection.open_bi().await?;
 

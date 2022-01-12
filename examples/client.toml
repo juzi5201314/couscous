@@ -2,6 +2,8 @@
 remote = "localhost:4000"
 token = "example"
 cert = "examples/cert.pem"
+retry_interval = "3s"
+max_retry = 5
 
 [client.route.a]
 to = "127.0.0.1:80"

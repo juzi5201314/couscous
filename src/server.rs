@@ -25,6 +25,8 @@ pub async fn run(config: Arc<ServerConfig>) -> anyhow::Result<()> {
                 config.private_key.clone(),
             )?;
             c.transport = Arc::new(transport_config());
+            Arc::get_mut(&mut c.transport).unwrap()
+                .max_concurrent_bidi_streams(config.max_concurrent_bidi_streams.unwrap_or(100).into());
             c
         },
         config.bind,

@@ -28,7 +28,30 @@ pub async fn run(conf: PathBuf) -> anyhow::Result<()> {
             server::run(Arc::new(server.clone())).await
         }
         (None, Some(client)) => {
-            client::run(Arc::new(client.clone())).await
+            let mut retry_num = 0;
+            loop {
+                if let Err(err) = client::run(Arc::new(client.clone()), &mut retry_num).await {
+                    log::error!("{}", err);
+                    let time = if let Some(time) = &client.retry_interval {
+                        *time.duration()
+                    } else {
+                        break Ok(())
+                    };
+
+                    retry_num += 1;
+
+                    if let Some(max) = client.max_retry {
+                        log::info!("start {}/{} retries after {:?}...", retry_num, max, time);
+                        if retry_num > max {
+                            log::warn!("retry up to the maximum number of times, stop.");
+                            break Ok(())
+                        }
+                    } else {
+                        log::info!("start the {}nd retry after {:?}...", retry_num, time);
+                    }
+                    tokio::time::sleep(time).await;
+                }
+            }
         }
     }
 }

@@ -31,6 +31,7 @@ parking_lot = "0.11"
 bytes = "1.1.0"
 async-trait = "0.1"
 tokio-graceful-shutdown = "0.4.3"
+parse_duration = "2.1.1"
 
 tokio = { version = "1", features = ["full", "parking_lot"] }
 snmalloc-rs = "0.2.28"
