@@ -1,0 +1,13 @@
+[server]
+bind = "0.0.0.0:4000"
+token = "example"
+cert = "examples/cert.pem"
+private_key = "examples/key.pem"
+
+[server.route.a]
+bind = "0.0.0.0:8080"
+type = "tcp"
+
+[server.route.b]
+bind = "0.0.0.0:8080"
+type = "udp"

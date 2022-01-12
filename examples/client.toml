@@ -1,0 +1,12 @@
+[client]
+remote = "localhost:4000"
+token = "example"
+cert = "examples/cert.pem"
+
+[client.route.a]
+to = "127.0.0.1:80"
+type = "tcp"
+
+[client.route.b]
+to = "127.0.0.1:80"
+type = "udp"
