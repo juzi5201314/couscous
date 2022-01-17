@@ -1,5 +1,18 @@
 # couscous
 
+A remote port mapping tool, similar to `frp`, which maps a specified local port (after nat) to a remote server.
+
+This project is for experimenting with ideas and using it myself, so it's full of instability and bugs. If you're looking for a good alternative to frp, [rathole](https://github.com/rapiz1/rathole) is a very good project.
+
+## todo
+* Multiple connections to transfer data (connection pooling)
+* A connection that controls other information (such as keep-alive, mapping information, etc.) independent of the data transmission channel
+* Tests
+* Test the transmission on a bad network and how to optimize it.
+
+## data transmission method
+quic
+
 ## build
 ### native build
 ```shell
