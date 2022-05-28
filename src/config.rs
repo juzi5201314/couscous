@@ -2,7 +2,7 @@ use std::fs::read;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
-use compact_str::CompactStr;
+use compact_str::CompactString;
 use fnv::FnvHashMap;
 
 pub fn configuration(config_file: PathBuf) -> anyhow::Result<Config> {
@@ -24,8 +24,8 @@ fn default_log_level() -> log::LevelFilter {
 #[derive(Clone, Debug, serde::Deserialize)]
 pub struct ServerConfig {
     pub bind: SocketAddr,
-    pub route: FnvHashMap<CompactStr, ServerRoute>,
-    pub token: CompactStr,
+    pub route: FnvHashMap<CompactString, ServerRoute>,
+    pub token: CompactString,
     pub max_concurrent_bidi_streams: Option<u32>,
 
     #[serde(deserialize_with = "crate::quic::deserialize_cert")]
@@ -44,9 +44,9 @@ pub struct ServerRoute {
 
 #[derive(Clone, Debug, serde::Deserialize)]
 pub struct ClientConfig {
-    pub remote: CompactStr,
-    pub route: FnvHashMap<CompactStr, ClientRoute>,
-    pub token: CompactStr,
+    pub remote: CompactString,
+    pub route: FnvHashMap<CompactString, ClientRoute>,
+    pub token: CompactString,
     pub retry_interval: Option<time_unit::TimeUnit>,
     pub max_retry: Option<usize>,
     pub max_concurrent_bidi_streams: Option<u32>,
